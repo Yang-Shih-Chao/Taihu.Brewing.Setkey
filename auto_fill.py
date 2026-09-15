@@ -7,7 +7,11 @@ import time
 import datetime
 import os
 
-def start_automation(file_path):
+def start_automation(file_path, mode="全部新增"):
+    if mode not in ["新增子桶", "全部新增"]:
+        messagebox.showinfo("功能開發中", f"目前「{mode}」的功能尚未實作，現階段所有功能均屬於「新增子桶」。")
+        return
+
     # ---------------------------------------------------------
     # 1. 讀取資料 (支援 Excel 與 CSV)
     # ---------------------------------------------------------
@@ -336,8 +340,7 @@ def select_file():
             selected_mode = mode_var.get()
             print(f"DEBUG: 使用者選擇了模式 -> {selected_mode}")
             popup.destroy()
-            # 這裡之後可以把 selected_mode 傳遞給 start_automation，目前先單純觸發原本的功能
-            threading.Thread(target=start_automation, args=(file_path,), daemon=True).start()
+            threading.Thread(target=start_automation, args=(file_path, selected_mode), daemon=True).start()
             
         tk.Button(popup, text="確認並開始執行", command=start_now, font=("微軟正黑體", 11), bg="#2196F3", fg="white", width=15).pack(pady=15)
 
