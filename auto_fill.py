@@ -124,6 +124,8 @@ def start_automation(file_path, mode="全部新增"):
                     print(f"正在回到套餐組合列表，尋找商品編號: {group_name_alt}")
                     page.goto("https://hq.caterlord.com/Set/SetGroupIndex/")
                     page.wait_for_load_state("networkidle")
+                    page.reload()
+                    page.wait_for_load_state("networkidle")
                     page.wait_for_timeout(1000)
                     
                     # 在表格中找到包含該商品編號的 <td>，再往上找到它所屬的 <tr>，點擊展開箭頭
