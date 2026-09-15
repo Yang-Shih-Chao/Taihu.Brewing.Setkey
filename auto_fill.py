@@ -309,7 +309,37 @@ def select_file():
     )
     if file_path:
         file_label.config(text=f"📂 已選擇檔案:\n{file_path.split('/')[-1]}", fg="green")
-        threading.Thread(target=start_automation, args=(file_path,), daemon=True).start()
+        
+        # --- 彈出選項視窗 ---
+        popup = tk.Toplevel(root)
+        popup.title("選擇匯入模式")
+        popup.geometry("300x250")
+        
+        # 將 popup 視窗置中
+        popup.update_idletasks()
+        width = popup.winfo_width()
+        height = popup.winfo_height()
+        x = (popup.winfo_screenwidth() // 2) - (width // 2)
+        y = (popup.winfo_screenheight() // 2) - (height // 2)
+        popup.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+        
+        tk.Label(popup, text="請選擇要執行的功能：", font=("微軟正黑體", 12, "bold")).pack(pady=15)
+        
+        mode_var = tk.StringVar(value="全部新增")
+        
+        tk.Radiobutton(popup, text="1. 新增子桶", variable=mode_var, value="新增子桶", font=("微軟正黑體", 11)).pack(anchor="w", padx=70, pady=2)
+        tk.Radiobutton(popup, text="2. 新增套餐", variable=mode_var, value="新增套餐", font=("微軟正黑體", 11)).pack(anchor="w", padx=70, pady=2)
+        tk.Radiobutton(popup, text="3. 新增母桶", variable=mode_var, value="新增母桶", font=("微軟正黑體", 11)).pack(anchor="w", padx=70, pady=2)
+        tk.Radiobutton(popup, text="4. 全部新增", variable=mode_var, value="全部新增", font=("微軟正黑體", 11)).pack(anchor="w", padx=70, pady=2)
+        
+        def start_now():
+            selected_mode = mode_var.get()
+            print(f"DEBUG: 使用者選擇了模式 -> {selected_mode}")
+            popup.destroy()
+            # 這裡之後可以把 selected_mode 傳遞給 start_automation，目前先單純觸發原本的功能
+            threading.Thread(target=start_automation, args=(file_path,), daemon=True).start()
+            
+        tk.Button(popup, text="確認並開始執行", command=start_now, font=("微軟正黑體", 11), bg="#2196F3", fg="white", width=15).pack(pady=15)
 
 # --- 建立 Tkinter UI 介面 ---
 root = tk.Tk()
