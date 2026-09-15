@@ -178,9 +178,20 @@ def start_automation(file_path):
                     
                     # 下拉選單 (呼叫上方寫好的 Kendo UI 專用函式)
                     select_kendo("項目種類", "一般銷售項目")
-                    select_kendo("分類", "Beer - Taihu")
-                    select_kendo("部門", "Beer - Taihu") 
-                    select_kendo("子部門", "[BEV001001] BEER | Taihu") 
+                    val_category, val_dept, val_subdept = "", "", ""
+                    for col in df.columns:
+                        if "分類" in col: val_category = str(row[col]).strip()
+                        elif "子部門" in col: val_subdept = str(row[col]).strip()
+                        elif "部門" in col: val_dept = str(row[col]).strip()
+                    
+                    val_category = val_category if val_category and val_category.lower() not in ['nan', 'none'] else "Beer - Taihu"
+                    val_dept = val_dept if val_dept and val_dept.lower() not in ['nan', 'none'] else "Beer - Taihu"
+                    val_subdept = val_subdept if val_subdept and val_subdept.lower() not in ['nan', 'none'] else "[BEV001001] BEER | Taihu"
+                    
+                    print(f"    -> 準備填入: 分類='{val_category}', 部門='{val_dept}', 子部門='{val_subdept}'")
+                    select_kendo("分類", val_category)
+                    select_kendo("部門", val_dept)
+                    select_kendo("子部門", val_subdept)
                     select_kendo("按鈕樣式", "淺灰色 (細)")
                     # ---------------------------------------------------------
                     # 【重要紀錄】: 勾選「可獨立銷售及套餐項目」
