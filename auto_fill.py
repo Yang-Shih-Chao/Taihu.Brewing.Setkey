@@ -119,6 +119,24 @@ def start_automation(file_path, mode="全部新增"):
                     msg = f"✅ 【成功】套餐組合 (名稱: {group_name})"
                     print(msg)
                     report_lines.append(msg)
+                    
+                    # --- 回到 SetGroupIndex 頁面，展開該筆並按「加入項目」 ---
+                    print(f"正在回到套餐組合列表，尋找商品編號: {group_name_alt}")
+                    page.goto("https://hq.caterlord.com/Set/SetGroupIndex/")
+                    page.wait_for_load_state("networkidle")
+                    page.wait_for_timeout(1000)
+                    
+                    # 在表格中找到包含該商品編號的那一列，點擊展開箭頭
+                    row_locator = page.locator(f"xpath=//tr[contains(., '{group_name_alt}')]")
+                    row_locator.first.locator("a.k-i-collapse, a.k-i-expand").first.click()
+                    page.wait_for_timeout(1000)
+                    
+                    # 點擊展開區域中的「加入項目」按鈕
+                    row_locator.first.locator("xpath=following-sibling::tr[1]").locator("a.k-grid-AddItem").first.click()
+                    page.wait_for_timeout(1000)
+                    
+                    print(f"✅ 已展開並點擊「加入項目」: {group_name_alt}")
+                    break  # 測試模式：只跑第一筆讓你檢查
                     print(msg)
                     report_lines.append(msg)
                 except Exception as e:
