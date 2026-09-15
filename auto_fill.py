@@ -26,6 +26,8 @@ def start_automation(file_path):
         messagebox.showerror("錯誤", f"讀取檔案失敗:\n{e}")
         return
 
+    df.columns = df.columns.str.strip()
+
     # 檢查必填欄位是否存在
     required_cols = ["商品編號", "商品名稱", "單價"]
     for col in required_cols:
