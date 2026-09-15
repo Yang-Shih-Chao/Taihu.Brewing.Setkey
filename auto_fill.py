@@ -112,11 +112,14 @@ def start_automation(file_path, mode="全部新增"):
                     if max_count and max_count.lower() not in ['nan', 'none']:
                         page.evaluate(f"() => $('#MaxModifierSelectCount').data('kendoNumericTextBox').value({max_count})")
                         
-                    page.locator(".k-grid-update").first.click()
+                    # page.locator(".k-grid-update").first.click()  # 測試模式：暫時不按更新
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state("networkidle")
                     
-                    msg = f"✅ 【成功】套餐組合 (名稱: {group_name})"
+                    msg = f"✅ 【測試模式】已填好套餐組合 (名稱: {group_name})，暫停以供檢查"
+                    print(msg)
+                    report_lines.append(msg)
+                    break # 測試模式：只跑第一筆就停下來讓你檢查
                     print(msg)
                     report_lines.append(msg)
                 except Exception as e:
@@ -138,6 +141,10 @@ def start_automation(file_path, mode="全部新增"):
                     f.write(line + "\n")
             
             messagebox.showinfo("執行完成", f"所有套餐已處理完畢！\n\n執行報告已儲存:\n{report_path}")
+            
+            # 讓程式在此無限等待，不自動關閉瀏覽器，讓您可以檢視畫面
+            import time
+            time.sleep(999999)
             browser.close()
             return
 
