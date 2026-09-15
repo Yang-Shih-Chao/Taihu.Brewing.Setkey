@@ -8,7 +8,7 @@ import datetime
 import os
 
 def start_automation(file_path, mode="全部新增"):
-    if mode not in ["新增子桶", "全部新增"]:
+    if mode not in ["新增子桶", "新增套餐", "全部新增"]:
         messagebox.showinfo("功能開發中", f"目前「{mode}」的功能尚未實作，現階段所有功能均屬於「新增子桶」。")
         return
 
@@ -69,6 +69,64 @@ def start_automation(file_path, mode="全部新增"):
         print("正在切換帳號...")
         page.goto("https://hq.caterlord.com/CommonTools/SwitchAccount?accountId=12643")
         page.wait_for_load_state("networkidle")
+        if mode == "新增套餐":
+            print("開始執行「新增套餐」模式...")
+            page.goto("https://hq.caterlord.com/Set/SetGroupIndex/")
+            page.wait_for_load_state("networkidle")
+            
+            for index, row in df.iterrows():
+                group_name = str(row.get("項目組合名稱", "")).strip()
+                group_name_alt = str(row.get("項目組合名稱 (第二語言)", "")).strip()
+                min_count = str(row.get("最少選擇數量", "")).strip()
+                max_count = str(row.get("最多可選數量", "")).strip()
+                
+                if not group_name or group_name.lower() in ['nan', 'none']:
+                    continue
+                    
+                print(f"正在處理套餐組合: {group_name}")
+                
+                try:
+                    page.locator("a:has-text('新增套餐項目組合'), .k-grid-add").first.click()
+                    page.wait_for_timeout(1000)
+                    
+                    page.locator("#GroupBatchName").fill(group_name)
+                    if group_name_alt and group_name_alt.lower() not in ['nan', 'none']:
+                        page.locator("#GroupBatchNameAlt").fill(group_name_alt)
+                    
+                    if min_count and min_count.lower() not in ['nan', 'none']:
+                        page.evaluate(f"() => $('#MinModifierSelectCount').data('kendoNumericTextBox').value({min_count})")
+                    if max_count and max_count.lower() not in ['nan', 'none']:
+                        page.evaluate(f"() => $('#MaxModifierSelectCount').data('kendoNumericTextBox').value({max_count})")
+                        
+                    page.locator(".k-grid-update").first.click()
+                    page.wait_for_timeout(1000)
+                    page.wait_for_load_state("networkidle")
+                    
+                    msg = f"✅ 【成功】套餐組合 (名稱: {group_name})"
+                    print(msg)
+                    report_lines.append(msg)
+                except Exception as e:
+                    msg = f"❌ 【失敗】套餐組合 (名稱: {group_name}) - 錯誤: {str(e).splitlines()[0]}"
+                    print(msg)
+                    report_lines.append(msg)
+                    
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            report_filename = f"匯入報告_{timestamp}.txt"
+            import os
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            report_path = os.path.join(script_dir, report_filename)
+            with open(report_path, "w", encoding="utf-8") as f:
+                f.write("=== Caterlord 自動匯入執行報告 ===\n")
+                f.write(f"執行時間: {timestamp}\n")
+                f.write("="*35 + "\n\n")
+                for line in report_lines:
+                    f.write(line + "\n")
+            
+            messagebox.showinfo("執行完成", f"所有套餐已處理完畢！\n\n執行報告已儲存:\n{report_path}")
+            browser.close()
+            return
+
 
         # ---------------------------------------------------------
         # 【重要紀錄】: Kendo UI 下拉選單專用處理函式
