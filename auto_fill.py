@@ -186,7 +186,12 @@ def start_automation(file_path):
                     # 【重要紀錄】: 設定分店與印表機
                     # ---------------------------------------------------------
                     setup_shop("Giddy", "Giddy_Bar01")
-                    setup_shop("台南店", "Bar內用")
+                    code_str = str(item_code).strip()
+                    name_str = str(item_name).strip()
+                    if code_str.upper().startswith('S') and name_str.endswith('|S'):
+                        setup_shop("台南店", "Bar外帶")
+                    else:
+                        setup_shop("台南店", "Bar內用")
                     # ---------------------------------------------------------
                     # 價格填寫 (Kendo NumericTextBox 特殊處理)
                     # ---------------------------------------------------------
