@@ -149,6 +149,12 @@ def start_automation(file_path):
             item_name = str(row["商品名稱"])
             price = str(row["單價"])
             
+            if not (item_code.strip().endswith('SD') or item_code.strip().endswith('SR') or item_code.strip().endswith('SF')):
+                msg = f"␐跳過␑商品編號不符合規則: {item_name} ({item_code})"
+                print(msg)
+                report_lines.append(msg)
+                continue
+            
             print(f"正在處理: {item_name} ({item_code})")
             
             max_retries = 3
