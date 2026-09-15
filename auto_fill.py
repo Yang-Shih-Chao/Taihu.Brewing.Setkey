@@ -128,13 +128,13 @@ def start_automation(file_path, mode="全部新增"):
                     page.wait_for_load_state("networkidle")
                     page.wait_for_timeout(1000)
                     
-                    # 在表格中找到包含該商品編號的 <td>，再往上找到它所屬的 <tr>，點擊展開箭頭
+                    # 用「項目組合名稱(第二語言)」（即商品編號）精準定位該列，點擊展開箭頭
                     target_row = page.locator(f"xpath=//td[@role='gridcell' and normalize-space(text())='{group_name_alt}']/parent::tr")
-                    target_row.first.locator("a.k-i-collapse, a.k-i-expand").first.click()
-                    page.wait_for_timeout(1000)
+                    target_row.first.locator("a.k-icon.k-i-expand").click()
+                    page.wait_for_timeout(1500)
                     
-                    # 點擊展開區域中的「加入項目」按鈕（在展開列的下一個 sibling tr 裡面）
-                    target_row.first.locator("xpath=following-sibling::tr[1]").locator("a.k-grid-AddItem").first.click()
+                    # 展開後，在該列的下一個 sibling tr 裡找到「加入項目」按鈕並點擊
+                    page.locator(f"xpath=//td[@role='gridcell' and normalize-space(text())='{group_name_alt}']/parent::tr/following-sibling::tr[1]//a[contains(@class, 'k-grid-AddItem')]").first.click()
                     page.wait_for_timeout(1000)
                     
                     print(f"✅ 已展開並點擊「加入項目」: {group_name_alt}")
