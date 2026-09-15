@@ -75,8 +75,9 @@ def start_automation(file_path, mode="全部新增"):
             page.wait_for_load_state("networkidle")
             
             for index, row in df.iterrows():
-                group_name = str(row.get("項目組合名稱", "")).strip()
-                group_name_alt = str(row.get("項目組合名稱 (第二語言)", "")).strip()
+                # 使用者的特別欄位對應規則
+                group_name = str(row.get("商品名稱", "")).strip()
+                group_name_alt = str(row.get("商品編號", "")).strip()
                 min_count = str(row.get("最少選擇數量", "")).strip()
                 max_count = str(row.get("最多可選數量", "")).strip()
                 
