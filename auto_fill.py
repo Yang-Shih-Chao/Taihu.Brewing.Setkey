@@ -78,10 +78,23 @@ def start_automation(file_path, mode="全部新增"):
                 # 使用者的特別欄位對應規則
                 group_name = str(row.get("商品名稱", "")).strip()
                 group_name_alt = str(row.get("商品編號", "")).strip()
-                min_count = str(row.get("最少選擇數量", "")).strip()
-                max_count = str(row.get("最多可選數量", "")).strip()
+                
+                # 數量直接寫死為 1
+                min_count = "1"
+                max_count = "1"
                 
                 if not group_name or group_name.lower() in ['nan', 'none']:
+                    continue
+                
+                if not group_name_alt or group_name_alt.lower() in ['nan', 'none']:
+                    continue
+
+                # 判斷邏輯：若是 SD、SR、SF 結尾則跳過，只有 S 結尾才執行
+                if group_name_alt.endswith(('SD', 'SR', 'SF')):
+                    print(f"␐跳過␑商品編號為 SD/SR/SF 結尾: {group_name_alt}")
+                    continue
+                if not group_name_alt.endswith('S'):
+                    print(f"␐跳過␑商品編號非 S 結尾: {group_name_alt}")
                     continue
                     
                 print(f"正在處理套餐組合: {group_name}")
