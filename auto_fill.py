@@ -120,21 +120,34 @@ def start_automation(file_path, mode="全部新增"):
                     print(msg)
                     report_lines.append(msg)
                     
-                    # --- 回到 SetGroupIndex 頁面，展開該筆並按「加入項目」 ---
-                    print(f"正在回到套餐組合列表，尋找商品編號: {group_name_alt}")
+                    # --- 回到 SetGroupIndex 頁面，用篩選功能找到該筆 ---
+                    print(f"正在回到套餐組合列表，用篩選功能尋找商品編號: {group_name_alt}")
                     page.goto("https://hq.caterlord.com/Set/SetGroupIndex/")
                     page.wait_for_load_state("networkidle")
                     page.reload()
                     page.wait_for_load_state("networkidle")
                     page.wait_for_timeout(1000)
                     
-                    # 用「項目組合名稱(第二語言)」（即商品編號）精準定位該列，點擊展開箭頭
+                    # 1. 點擊「項目組合名稱 (第二語言)」欄位的篩選圖示（漏斗 icon）
+                    page.locator("xpath=//th[contains(., '項目組合名稱 (第二語言)')]//a[contains(@class, 'k-grid-filter')]").click()
+                    page.wait_for_timeout(500)
+                    
+                    # 2. 在篩選彈出框中輸入商品編號
+                    page.locator("xpath=//input[@title='值']").first.fill(group_name_alt)
+                    page.wait_for_timeout(300)
+                    
+                    # 3. 按下「過濾」按鈕
+                    page.locator("xpath=//button[@title='過濾']").click()
+                    page.wait_for_timeout(1000)
+                    page.wait_for_load_state("networkidle")
+                    
+                    # 4. 篩選後精準定位該列，點擊展開箭頭
                     target_row = page.locator(f"xpath=//td[@role='gridcell' and normalize-space(text())='{group_name_alt}']/parent::tr")
                     target_row.first.locator("a.k-icon.k-i-expand").click()
                     page.wait_for_timeout(1500)
                     
-                    # 展開後，在該列的下一個 sibling tr 裡找到「加入項目」按鈕並點擊
-                    page.locator(f"xpath=//td[@role='gridcell' and normalize-space(text())='{group_name_alt}']/parent::tr/following-sibling::tr[1]//a[contains(@class, 'k-grid-AddItem')]").first.click()
+                    # 5. 展開後，點擊「加入項目」按鈕
+                    page.locator("xpath=//a[contains(@class, 'k-grid-AddItem')]").first.click()
                     page.wait_for_timeout(1000)
                     
                     print(f"✅ 已展開並點擊「加入項目」: {group_name_alt}")
