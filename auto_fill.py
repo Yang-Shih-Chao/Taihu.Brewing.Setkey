@@ -173,7 +173,6 @@ def start_automation(file_path, mode="全部新增"):
             messagebox.showinfo("執行完成", f"所有套餐已處理完畢！\n\n執行報告已儲存:\n{report_path}")
             
             # 讓程式在此無限等待，不自動關閉瀏覽器，讓您可以檢視畫面
-            import time
             time.sleep(999999)
             browser.close()
             return
