@@ -148,9 +148,25 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 5. 展開後，點擊「加入項目」按鈕
                     page.locator("xpath=//a[contains(@class, 'k-grid-AddItem')]").first.click()
+                    page.wait_for_timeout(2000)
+                    
+                    print("已點擊「加入項目」，等待彈出視窗...")
+                    
+                    # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
+                    # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
+                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
                     page.wait_for_timeout(1000)
                     
-                    print(f"✅ 已展開並點擊「加入項目」: {group_name_alt}")
+                    # 7. 在篩選選單輸入框中填入商品編號
+                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//input[contains(@class, 'k-textbox')]").fill(group_name_alt)
+                    page.wait_for_timeout(500)
+                    
+                    # 8. 點擊「過濾」按鈕
+                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//button[@title='過濾']").click()
+                    page.wait_for_timeout(1500)
+                    page.wait_for_load_state("networkidle")
+                    
+                    print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     break  # 測試模式：只跑第一筆讓你檢查
                     print(msg)
                     report_lines.append(msg)
