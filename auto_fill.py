@@ -158,7 +158,7 @@ def start_automation(file_path, mode="全部新增"):
                     page.wait_for_timeout(1000)
                     
                     # 7. 在篩選選單輸入框中填入商品編號
-                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//input[contains(@class, 'k-textbox')]").fill(group_name_alt)
+                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//input[contains(@class, 'k-textbox')]").first.fill(group_name_alt)
                     page.wait_for_timeout(500)
                     
                     # 8. 點擊「過濾」按鈕
