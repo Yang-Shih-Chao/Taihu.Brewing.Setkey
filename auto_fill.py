@@ -167,6 +167,28 @@ def start_automation(file_path, mode="全部新增"):
                     page.wait_for_load_state("networkidle")
                     
                     print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
+                    
+                    # 9. 依據邏輯勾選核取方塊
+                    print(f"開始執行勾選邏輯... (原商品編號: {group_name_alt})")
+                    popup_rows = page.locator("#setGroupItemSelectorWindow .k-grid-content tbody tr").all()
+                    
+                    for row in popup_rows:
+                        # 取得該列的「項目編碼」
+                        item_code = row.locator("td").nth(0).inner_text().strip()
+                        
+                        # 勾選邏輯 1: 若商品編號是 S 或 s 開頭
+                        if group_name_alt.lower().startswith('s'):
+                            # 則勾選項目結尾為 "PD", "PR", "PF" 同時開頭為 "S" 或 "s" 的項目
+                            if item_code.lower().startswith('s') and item_code.endswith(('PD', 'PR', 'PF')):
+                                row.locator("input[type='checkbox']").check()
+                                print(f"  [v] 已勾選: {item_code}")
+                            else:
+                                print(f"  [ ] 略過: {item_code}")
+                        else:
+                            print(f"  [ ] 商品編號非 S 開頭，未觸發勾選邏輯 1: {item_code}")
+                            
+                    page.wait_for_timeout(2000)
+                    print("✅ 勾選完畢，測試模式暫停以供檢查。")
                     break  # 測試模式：只跑第一筆讓你檢查
                     print(msg)
                     report_lines.append(msg)
