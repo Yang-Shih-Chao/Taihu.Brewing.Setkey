@@ -159,10 +159,8 @@ def start_automation(file_path, mode="全部新增"):
                     print(msg)
                     report_lines.append(msg)
                     
-            import datetime
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             report_filename = f"匯入報告_{timestamp}.txt"
-            import os
             script_dir = os.path.dirname(os.path.abspath(__file__))
             report_path = os.path.join(script_dir, report_filename)
             with open(report_path, "w", encoding="utf-8") as f:
