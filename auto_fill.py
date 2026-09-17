@@ -154,18 +154,19 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
                     # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
-                    # 使用 force=True 確保點擊能穿透任何潛在的覆蓋層
-                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").first.click(force=True)
-                    page.wait_for_timeout(1500)
+                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
+                    page.wait_for_timeout(1000)
                     
-                    # 7. 在篩選選單輸入框中填入商品編號
-                    # 放寬定位器，直接尋找畫面上可見且帶有 title='值' 的輸入框
-                    visible_input = page.locator("xpath=//input[@title='值']").filter(state="visible").first
+                    # 7. 在篩選選單輸入框中填入商品編號 (直接找畫面上正在顯示的、且可以用來輸入文字的篩選框)
+                    # 彈出視窗的篩選框，可能沒有 form.k-filter-menu，所以我們改用尋找畫面上「可見的、可以輸入文字的欄位」
+                    visible_input = page.locator("input[type='text'], input.k-textbox, input[title='值']").filter(state="visible").last
                     visible_input.fill(group_name_alt)
                     page.wait_for_timeout(500)
                     
                     # 8. 點擊「過濾」按鈕
-                    visible_btn = page.locator("xpath=//button[@title='過濾']").filter(state="visible").first
+                    visible_btn = page.locator("button[title='過濾'], button[type='submit']").filter(has_text="過濾").filter(state="visible").last
+                    if visible_btn.count() == 0:
+                        visible_btn = page.locator("button").filter(has_text="過濾").filter(state="visible").last
                     visible_btn.click()
                     page.wait_for_timeout(1500)
                     page.wait_for_load_state("networkidle")
