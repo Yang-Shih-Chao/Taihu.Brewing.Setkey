@@ -157,12 +157,13 @@ def start_automation(file_path, mode="全部新增"):
                     page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
                     page.wait_for_timeout(1000)
                     
-                    # 7. 在篩選選單輸入框中填入商品編號
-                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//input[contains(@class, 'k-textbox')]").first.fill(group_name_alt)
+                    # 7. 在篩選選單輸入框中填入商品編號 (必須找畫面上「可見」的那一個選單，避免填到剛才外層已經隱藏的選單)
+                    visible_filter_menu = page.locator("form.k-filter-menu").filter(state="visible").first
+                    visible_filter_menu.locator("input.k-textbox").first.fill(group_name_alt)
                     page.wait_for_timeout(500)
                     
                     # 8. 點擊「過濾」按鈕
-                    page.locator("xpath=//form[contains(@class, 'k-filter-menu')]//button[@title='過濾']").click()
+                    visible_filter_menu.locator("button[@title='過濾']").first.click()
                     page.wait_for_timeout(1500)
                     page.wait_for_load_state("networkidle")
                     
