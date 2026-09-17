@@ -158,15 +158,13 @@ def start_automation(file_path, mode="全部新增"):
                     page.wait_for_timeout(1000)
                     
                     # 7. 在篩選選單輸入框中填入商品編號 (直接找畫面上正在顯示的、且可以用來輸入文字的篩選框)
-                    # 彈出視窗的篩選框，可能沒有 form.k-filter-menu，所以我們改用尋找畫面上「可見的、可以輸入文字的欄位」
-                    visible_input = page.locator("input[type='text'], input.k-textbox, input[title='值']").filter(state="visible").last
+                    # 使用 Playwright 支援的 :visible 偽類來過濾可見元素，避免 filter() 語法錯誤
+                    visible_input = page.locator("input[title='值']:visible").last
                     visible_input.fill(group_name_alt)
                     page.wait_for_timeout(500)
                     
                     # 8. 點擊「過濾」按鈕
-                    visible_btn = page.locator("button[title='過濾'], button[type='submit']").filter(has_text="過濾").filter(state="visible").last
-                    if visible_btn.count() == 0:
-                        visible_btn = page.locator("button").filter(has_text="過濾").filter(state="visible").last
+                    visible_btn = page.locator("button[title='過濾']:visible, button:has-text('過濾'):visible").last
                     visible_btn.click()
                     page.wait_for_timeout(1500)
                     page.wait_for_load_state("networkidle")
