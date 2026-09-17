@@ -186,14 +186,15 @@ def start_automation(file_path, mode="全部新增"):
                         if is_group_starts_with_s:
                             # 邏輯 1: 商品編號是 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭為 S/s 的項目
                             if is_item_ends_with_target and is_item_starts_with_s:
-                                row.locator("input[type='checkbox']").check()
+                                # Kendo UI 的 checkbox 通常被隱藏，必須點擊 label 或使用 force=True
+                                row.locator("label.chkbx-label").first.click(force=True)
                                 print(f"  [v] 邏輯1已勾選: {item_code}")
                             else:
                                 print(f"  [ ] 邏輯1略過: {item_code}")
                         else:
                             # 邏輯 2: 商品編號非 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭非 S/s 的項目
                             if is_item_ends_with_target and not is_item_starts_with_s:
-                                row.locator("input[type='checkbox']").check()
+                                row.locator("label.chkbx-label").first.click(force=True)
                                 print(f"  [v] 邏輯2已勾選: {item_code}")
                             else:
                                 print(f"  [ ] 邏輯2略過: {item_code}")
