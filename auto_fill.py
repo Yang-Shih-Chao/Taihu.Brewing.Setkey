@@ -179,16 +179,24 @@ def start_automation(file_path, mode="全部新增"):
                         # 取得該列的「項目編碼」
                         item_code = row.locator("td").nth(0).inner_text().strip()
                         
-                        # 勾選邏輯 1: 若商品編號是 S 或 s 開頭
-                        if group_name_alt.lower().startswith('s'):
-                            # 則勾選項目結尾為 "PD", "PR", "PF" 同時開頭為 "S" 或 "s" 的項目
-                            if item_code.lower().startswith('s') and item_code.endswith(('PD', 'PR', 'PF')):
+                        is_group_starts_with_s = group_name_alt.lower().startswith('s')
+                        is_item_starts_with_s = item_code.lower().startswith('s')
+                        is_item_ends_with_target = item_code.endswith(('SD', 'SR', 'SF'))
+                        
+                        if is_group_starts_with_s:
+                            # 邏輯 1: 商品編號是 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭為 S/s 的項目
+                            if is_item_ends_with_target and is_item_starts_with_s:
                                 row.locator("input[type='checkbox']").check()
-                                print(f"  [v] 已勾選: {item_code}")
+                                print(f"  [v] 邏輯1已勾選: {item_code}")
                             else:
-                                print(f"  [ ] 略過: {item_code}")
+                                print(f"  [ ] 邏輯1略過: {item_code}")
                         else:
-                            print(f"  [ ] 商品編號非 S 開頭，未觸發勾選邏輯 1: {item_code}")
+                            # 邏輯 2: 商品編號非 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭非 S/s 的項目
+                            if is_item_ends_with_target and not is_item_starts_with_s:
+                                row.locator("input[type='checkbox']").check()
+                                print(f"  [v] 邏輯2已勾選: {item_code}")
+                            else:
+                                print(f"  [ ] 邏輯2略過: {item_code}")
                             
                     page.wait_for_timeout(2000)
                     print("✅ 勾選完畢，測試模式暫停以供檢查。")
