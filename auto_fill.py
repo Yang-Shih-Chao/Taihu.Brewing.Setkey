@@ -173,7 +173,7 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 9. 依據邏輯勾選核取方塊
                     print(f"開始執行勾選邏輯... (原商品編號: {group_name_alt})")
-                    popup_rows = page.locator("#setGroupItemSelectorWindow .k-grid-content tbody tr").all()
+                    popup_rows = page.locator(".k-window:visible .k-grid-content tbody tr").all()
                     
                     for row in popup_rows:
                         # 取得該列的「項目編碼」
@@ -181,7 +181,7 @@ def start_automation(file_path, mode="全部新增"):
                         
                         is_group_starts_with_s = group_name_alt.lower().startswith('s')
                         is_item_starts_with_s = item_code.lower().startswith('s')
-                        is_item_ends_with_target = item_code.endswith(('SD', 'SR', 'SF'))
+                        is_item_ends_with_target = item_code.upper().endswith(('SD', 'SR', 'SF'))
                         
                         if is_group_starts_with_s:
                             # 邏輯 1: 商品編號是 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭為 S/s 的項目
