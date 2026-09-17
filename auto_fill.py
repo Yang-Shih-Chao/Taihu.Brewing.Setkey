@@ -154,16 +154,19 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
                     # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
-                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
-                    page.wait_for_timeout(1000)
+                    # 使用 force=True 確保點擊能穿透任何潛在的覆蓋層
+                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").first.click(force=True)
+                    page.wait_for_timeout(1500)
                     
-                    # 7. 在篩選選單輸入框中填入商品編號 (必須找畫面上「可見」的那一個選單，避免填到剛才外層已經隱藏的選單)
-                    visible_filter_menu = page.locator("form.k-filter-menu").filter(state="visible").first
-                    visible_filter_menu.locator("input.k-textbox").first.fill(group_name_alt)
+                    # 7. 在篩選選單輸入框中填入商品編號
+                    # 放寬定位器，直接尋找畫面上可見且帶有 title='值' 的輸入框
+                    visible_input = page.locator("xpath=//input[@title='值']").filter(state="visible").first
+                    visible_input.fill(group_name_alt)
                     page.wait_for_timeout(500)
                     
                     # 8. 點擊「過濾」按鈕
-                    visible_filter_menu.locator("button[@title='過濾']").first.click()
+                    visible_btn = page.locator("xpath=//button[@title='過濾']").filter(state="visible").first
+                    visible_btn.click()
                     page.wait_for_timeout(1500)
                     page.wait_for_load_state("networkidle")
                     
