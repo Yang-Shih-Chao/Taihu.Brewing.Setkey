@@ -108,9 +108,9 @@ def start_automation(file_path, mode="全部新增"):
                         page.locator("#GroupBatchNameAlt").fill(group_name_alt)
                     
                     if min_count and min_count.lower() not in ['nan', 'none']:
-                        page.evaluate(f"() => $('#MinModifierSelectCount').data('kendoNumericTextBox').value({min_count})")
+                        page.evaluate(f"() => {{ var tb = $('#MinModifierSelectCount').data('kendoNumericTextBox'); if(tb) {{ tb.value({min_count}); tb.trigger('change'); }} }}")
                     if max_count and max_count.lower() not in ['nan', 'none']:
-                        page.evaluate(f"() => $('#MaxModifierSelectCount').data('kendoNumericTextBox').value({max_count})")
+                        page.evaluate(f"() => {{ var tb = $('#MaxModifierSelectCount').data('kendoNumericTextBox'); if(tb) {{ tb.value({max_count}); tb.trigger('change'); }} }}")
                         
                     page.locator("a.k-grid-update").first.click()
                     page.wait_for_timeout(1000)
