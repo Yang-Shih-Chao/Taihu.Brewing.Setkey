@@ -199,20 +199,14 @@ def start_automation(file_path, mode="全部新增"):
                     print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     
                     print(f"執行打勾邏輯... (商品編號: {group_name_alt})")
-                    js_check_logic = f'''
+                                        js_check_logic = f'''
                     () => {{
                         var groupNameAlt = "{group_name_alt}".toUpperCase();
                         var isGroupStartsS = groupNameAlt.startsWith('S');
                         
-                        var windows = document.querySelectorAll('.k-window');
-                        var visibleWindow = null;
-                        for(var i=0; i<windows.length; i++) {{
-                            var w = windows[i];
-                            if(w.offsetWidth > 0 && w.offsetHeight > 0 && w.style.display !== 'none') {{
-                                visibleWindow = w;
-                                break;
-                            }}
-                        }}
+                        var windows = Array.from(document.querySelectorAll('.k-window'));
+                        // Find a visible window that ACTUALLY contains our grid rows
+                        var visibleWindow = windows.find(w => w.offsetWidth > 0 && w.style.display !== 'none' && w.querySelector('.k-grid-content tbody tr'));
                         
                         if(visibleWindow) {{
                             var rows = visibleWindow.querySelectorAll('.k-grid-content tbody tr');
@@ -242,6 +236,10 @@ def start_automation(file_path, mode="全部新增"):
                                     if (checkbox && !checkbox.checked) {{
                                         if (label) label.click();
                                         else checkbox.click();
+                                        
+                                        // 強制觸發變更事件確保 Vue/Kendo 狀態更新
+                                        checkbox.checked = true;
+                                        checkbox.dispatchEvent(new Event('change', {{ bubbles: true }}));
                                     }}
                                 }}
                             }}
