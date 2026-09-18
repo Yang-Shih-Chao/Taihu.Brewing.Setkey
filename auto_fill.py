@@ -228,9 +228,20 @@ def start_automation(file_path, mode="全部新增"):
                             else:
                                 print(f"  [ ] 邏輯2略過: {item_code}")
                             
+                    page.wait_for_timeout(1000)
+                    
+                    # 9. 點擊彈出視窗內的「儲存」按鈕
+                    print("點擊彈出視窗內的「儲存」按鈕...")
+                    page.locator(".k-window:visible button:has-text('儲存'), .k-window:visible a:has-text('儲存')").first.click()
                     page.wait_for_timeout(2000)
-                    print("✅ 勾選完畢，測試模式暫停以供檢查。")
-                    break  # 測試模式：只跑第一筆讓你檢查
+                    
+                    # 10. 點擊展開列內的「儲存」按鈕以完成加入項目
+                    print("點擊展開列內的「儲存」按鈕...")
+                    page.locator(".k-detail-row:visible a.k-grid-save-changes, .k-detail-row:visible a:has-text('儲存')").first.click()
+                    page.wait_for_timeout(2000)
+                    page.wait_for_load_state("networkidle")
+                    
+                    msg = f"✅ 【成功】套餐組合 (名稱: {group_name}) 已完成項目勾選與儲存"
                     print(msg)
                     report_lines.append(msg)
                 except Exception as e:
