@@ -199,7 +199,7 @@ def start_automation(file_path, mode="全部新增"):
                     print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     
                     print(f"執行打勾邏輯... (商品編號: {group_name_alt})")
-                    js_check_logic = f"""
+                                        js_check_logic = f'''
                     () => {{
                         var groupNameAlt = "{group_name_alt}".toUpperCase();
                         var isGroupStartsS = groupNameAlt.startsWith('S');
@@ -221,7 +221,11 @@ def start_automation(file_path, mode="全部新增"):
                                 var cells = row.querySelectorAll('td');
                                 if(cells.length === 0) continue;
                                 
-                                var itemCode = cells[0].innerText.trim().toUpperCase();
+                                // 過濾掉隱藏的欄位 (display: none)，抓取第一個有文字的欄位作為 ItemCode
+                                var visibleCells = Array.from(cells).filter(c => c.style.display !== 'none' && c.innerText.trim() !== '');
+                                if(visibleCells.length === 0) continue;
+                                
+                                var itemCode = visibleCells[0].innerText.trim().toUpperCase();
                                 var isItemStartsS = itemCode.startsWith('S');
                                 var isItemEndsWithTarget = itemCode.endsWith('SD') || itemCode.endsWith('SR') || itemCode.endsWith('SF');
                                 
@@ -243,7 +247,7 @@ def start_automation(file_path, mode="全部新增"):
                             }}
                         }}
                     }}
-                    """
+                    '''
                     page.evaluate(js_check_logic)
                     page.wait_for_timeout(1000)
                     
