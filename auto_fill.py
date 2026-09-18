@@ -199,7 +199,7 @@ def start_automation(file_path, mode="全部新增"):
                     print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     
                     print(f"執行打勾邏輯... (商品編號: {group_name_alt})")
-                                        js_check_logic = f'''
+                    js_check_logic = f'''
                     () => {{
                         var groupNameAlt = "{group_name_alt}".toUpperCase();
                         var isGroupStartsS = groupNameAlt.startsWith('S');
