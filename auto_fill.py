@@ -198,36 +198,53 @@ def start_automation(file_path, mode="全部新增"):
                     
                     print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     
-                    # 9. 依據邏輯勾選核取方塊
-                    print(f"開始執行勾選邏輯... (原商品編號: {group_name_alt})")
-                    popup_rows = page.locator(".k-window:visible .k-grid-content tbody tr").all()
-                    
-                    for row in popup_rows:
-                        # 取得該列的「項目編碼」
-                        item_code = row.locator("td").nth(0).inner_text().strip()
+                    print(f"執行打勾邏輯... (商品編號: {group_name_alt})")
+                    js_check_logic = f"""
+                    () => {{
+                        var groupNameAlt = "{group_name_alt}".toUpperCase();
+                        var isGroupStartsS = groupNameAlt.startsWith('S');
                         
-                        is_group_starts_with_s = group_name_alt.lower().startswith('s')
-                        is_item_starts_with_s = item_code.lower().startswith('s')
-                        is_item_ends_with_target = item_code.upper().endswith(('SD', 'SR', 'SF'))
+                        var windows = document.querySelectorAll('.k-window');
+                        var visibleWindow = null;
+                        for(var i=0; i<windows.length; i++) {{
+                            var w = windows[i];
+                            if(w.offsetWidth > 0 && w.offsetHeight > 0 && w.style.display !== 'none') {{
+                                visibleWindow = w;
+                                break;
+                            }}
+                        }}
                         
-                        if is_group_starts_with_s:
-                            # 邏輯 1: 商品編號是 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭為 S/s 的項目
-                            if is_item_ends_with_target and is_item_starts_with_s:
-                                # 檢查 checkbox 狀態，只有在「未勾選」時才去點擊 label
-                                if not row.locator("input[type='checkbox']").first.is_checked():
-                                    row.locator("label.chkbx-label").first.click(force=True)
-                                print(f"  [v] 邏輯1已勾選: {item_code}")
-                            else:
-                                print(f"  [ ] 邏輯1略過: {item_code}")
-                        else:
-                            # 邏輯 2: 商品編號非 S 或 s 開頭 -> 勾選結尾 SD/SR/SF 且開頭非 S/s 的項目
-                            if is_item_ends_with_target and not is_item_starts_with_s:
-                                if not row.locator("input[type='checkbox']").first.is_checked():
-                                    row.locator("label.chkbx-label").first.click(force=True)
-                                print(f"  [v] 邏輯2已勾選: {item_code}")
-                            else:
-                                print(f"  [ ] 邏輯2略過: {item_code}")
-                            
+                        if(visibleWindow) {{
+                            var rows = visibleWindow.querySelectorAll('.k-grid-content tbody tr');
+                            for(var j=0; j<rows.length; j++) {{
+                                var row = rows[j];
+                                var cells = row.querySelectorAll('td');
+                                if(cells.length === 0) continue;
+                                
+                                var itemCode = cells[0].innerText.trim().toUpperCase();
+                                var isItemStartsS = itemCode.startsWith('S');
+                                var isItemEndsWithTarget = itemCode.endsWith('SD') || itemCode.endsWith('SR') || itemCode.endsWith('SF');
+                                
+                                var shouldCheck = false;
+                                if (isGroupStartsS) {{
+                                    if (isItemEndsWithTarget && isItemStartsS) shouldCheck = true;
+                                }} else {{
+                                    if (isItemEndsWithTarget && !isItemStartsS) shouldCheck = true;
+                                }}
+                                
+                                if (shouldCheck) {{
+                                    var checkbox = row.querySelector("input[type='checkbox']");
+                                    var label = row.querySelector("label.chkbx-label");
+                                    if (checkbox && !checkbox.checked) {{
+                                        if (label) label.click();
+                                        else checkbox.click();
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }}
+                    """
+                    page.evaluate(js_check_logic)
                     page.wait_for_timeout(1000)
                     
                     # 9. 點擊彈出視窗內的「儲存」按鈕
