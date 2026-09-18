@@ -154,7 +154,34 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
                     # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
-                    page.locator(".k-window[role='dialog']:visible th:has-text('項目編碼') a.k-grid-filter, .k-window[role='dialog']:visible th[data-field='ItemCode'] a.k-grid-filter").first.click()
+                                        # 6. 使用 JavaScript 直接強制點擊「項目編碼」的篩選漏斗，無視任何動畫或隱藏層阻擋
+                    js_click_filter = '''
+                    () => {
+                        var windows = document.querySelectorAll('.k-window');
+                        var visibleWindow = null;
+                        for(var i=0; i<windows.length; i++) {
+                            var w = windows[i];
+                            if(w.offsetWidth > 0 && w.offsetHeight > 0 && w.style.display !== 'none') {
+                                visibleWindow = w;
+                                break;
+                            }
+                        }
+                        if(visibleWindow) {
+                            var ths = visibleWindow.querySelectorAll('th');
+                            for(var j=0; j<ths.length; j++) {
+                                if(ths[j].innerText.includes('項目編碼')) {
+                                    var filterLink = ths[j].querySelector('a.k-grid-filter');
+                                    if(filterLink) {
+                                        filterLink.click();
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                    '''
+                    page.evaluate(js_click_filter)
                     page.wait_for_timeout(1000)
                     
                     # 7. 在篩選選單輸入框中填入商品編號 (直接找畫面上正在顯示的、且可以用來輸入文字的篩選框)
