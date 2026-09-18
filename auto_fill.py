@@ -154,7 +154,7 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
                     # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
-                    page.locator("xpath=//div[@id='setGroupItemSelectorWindow']//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
+                    page.locator("xpath=//div[contains(@class, 'k-window') and not(contains(@style, 'display: none'))]//th[contains(., '項目編碼')]//a[contains(@class, 'k-grid-filter')]").click()
                     page.wait_for_timeout(1000)
                     
                     # 7. 在篩選選單輸入框中填入商品編號 (直接找畫面上正在顯示的、且可以用來輸入文字的篩選框)
