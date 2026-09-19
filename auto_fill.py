@@ -56,7 +56,6 @@ def start_automation(file_path, mode="全部新增"):
         page.wait_for_load_state("networkidle")
         
         # 【自動登入邏輯】
-        print("正在自動登入...")
         try:
             page.locator('input[type="text"], input[name*="user" i]').first.fill("demotaihu")
             page.locator('input[type="password"]').first.fill("demotaihu")
@@ -66,7 +65,6 @@ def start_automation(file_path, mode="全部新增"):
             messagebox.showinfo("自動登入失敗", "找不到登入欄位，請手動登入！\n登入完成後請點擊「確定」繼續執行。")
 
         # 切換到指定帳號
-        print("正在切換帳號...")
         page.goto("https://hq.caterlord.com/CommonTools/SwitchAccount?accountId=12643")
         page.wait_for_load_state("networkidle")
         if mode == "新增套餐":
@@ -91,10 +89,8 @@ def start_automation(file_path, mode="全部新增"):
 
                 # 判斷邏輯：若是 SD、SR、SF 結尾則跳過，只有 S 結尾才執行
                 if group_name_alt.endswith(('SD', 'SR', 'SF')):
-                    print(f"␐跳過␑商品編號為 SD/SR/SF 結尾: {group_name_alt}")
                     continue
                 if not group_name_alt.endswith('S'):
-                    print(f"␐跳過␑商品編號非 S 結尾: {group_name_alt}")
                     continue
                     
                 print(f"正在處理套餐組合: {group_name}")
@@ -150,7 +146,6 @@ def start_automation(file_path, mode="全部新增"):
                     page.locator("xpath=//a[contains(@class, 'k-grid-AddItem')]").first.click()
                     page.wait_for_timeout(2000)
                     
-                    print("已點擊「加入項目」，等待彈出視窗...")
                     
                     # 6. 在彈出的「選擇套餐項目」視窗中，點擊「項目編碼」欄位的篩選圖示
                     # 彈出視窗的 ID 通常是 setGroupItemSelectorWindow
@@ -184,38 +179,57 @@ def start_automation(file_path, mode="全部新增"):
                     page.evaluate(js_click_filter)
                     page.wait_for_timeout(1000)
                     
-                    # 7. 在篩選選單輸入框中填入商品編號 (直接找畫面上正在顯示的、且可以用來輸入文字的篩選框)
-                    # 使用 Playwright 支援的 :visible 偽類來過濾可見元素，避免 filter() 語法錯誤
-                    visible_input = page.locator("input[title='值']:visible").last
-                    visible_input.fill(group_name_alt)
-                    page.wait_for_timeout(500)
-                    
-                    # 8. 點擊「過濾」按鈕
-                    visible_btn = page.locator("button[title='過濾']:visible, button:has-text('過濾'):visible").last
-                    visible_btn.click()
+                    # 7 & 8. 使用 Javascript 直接填寫並過濾，避免 Playwright 自動滾動畫面
+                    js_fill_filter = f'''
+                    () => {{
+                        var containers = Array.from(document.querySelectorAll('.k-animation-container'));
+                        var visibleContainer = containers.find(c => c.offsetWidth > 0 && c.style.display !== 'none' && c.querySelector("input[title='值']"));
+                        if(visibleContainer) {{
+                            var input = visibleContainer.querySelector("input[title='值']");
+                            if(input) {{
+                                input.value = "{group_name_alt}";
+                                input.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                input.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                            }}
+                            var btn = Array.from(visibleContainer.querySelectorAll('button')).find(b => b.innerText.includes('過濾') || b.title.includes('過濾'));
+                            if(btn) {{
+                                btn.click();
+                            }}
+                        }}
+                    }}
+                    '''
+                    page.evaluate(js_fill_filter)
                     page.wait_for_timeout(1500)
                     page.wait_for_load_state("networkidle")
                     
-                    print(f"✅ 彈出視窗已成功篩選項目編碼: {group_name_alt}")
                     
-                    print(f"執行打勾邏輯... (商品編號: {group_name_alt})")
                     js_check_logic = f'''
-                    () => {{
+                    async () => {{
+                        console.log("=== 自動打勾腳本開始執行 ===");
                         var groupNameAlt = "{group_name_alt}".toUpperCase();
                         var isGroupStartsS = groupNameAlt.startsWith('S');
+                        console.log("目標主套餐:", groupNameAlt, "是否S開頭:", isGroupStartsS);
                         
                         var windows = Array.from(document.querySelectorAll('.k-window'));
-                        // Find a visible window that ACTUALLY contains our grid rows
-                        var visibleWindow = windows.find(w => w.offsetWidth > 0 && w.style.display !== 'none' && w.querySelector('.k-grid-content tbody tr'));
+                        console.log("總共找到 " + windows.length + " 個 .k-window 元素");
+                        
+                        var visibleWindow = windows.find(w => w.offsetWidth > 0 && w.style.display !== 'none' && w.querySelector('tbody tr'));
                         
                         if(visibleWindow) {{
-                            var rows = visibleWindow.querySelectorAll('.k-grid-content tbody tr');
-                            for(var j=0; j<rows.length; j++) {{
-                                var row = rows[j];
+                            // 建立一個函數來隨時獲取最新的 rows，避免 Kendo/Vue 重新渲染導致 DOM Detached
+                            var getRows = () => visibleWindow.querySelectorAll('tbody tr');
+                            var initialRowCount = getRows().length;
+                            console.log("找到可見的彈出視窗！裡面共有 " + initialRowCount + " 列資料。");
+                            
+                            for(var j=0; j<initialRowCount; j++) {{
+                                // 每次都重新從 DOM 樹抓取最新的 tr 元素
+                                var currentRows = getRows();
+                                if (j >= currentRows.length) break;
+                                var row = currentRows[j];
+                                
                                 var cells = row.querySelectorAll('td');
                                 if(cells.length === 0) continue;
                                 
-                                // 過濾掉隱藏的欄位 (display: none)，抓取第一個有文字的欄位作為 ItemCode
                                 var visibleCells = Array.from(cells).filter(c => c.style.display !== 'none' && c.innerText.trim() !== '');
                                 if(visibleCells.length === 0) continue;
                                 
@@ -230,33 +244,70 @@ def start_automation(file_path, mode="全部新增"):
                                     if (isItemEndsWithTarget && !isItemStartsS) shouldCheck = true;
                                 }}
                                 
+                                console.log("第 " + j + " 列 - 抓到的商品編號:", itemCode, "| 判斷結果應打勾:", shouldCheck);
+                                
                                 if (shouldCheck) {{
                                     var checkbox = row.querySelector("input[type='checkbox']");
                                     var label = row.querySelector("label.chkbx-label");
-                                    if (checkbox && !checkbox.checked) {{
-                                        if (label) label.click();
-                                        else checkbox.click();
-                                        
-                                        // 強制觸發變更事件確保 Vue/Kendo 狀態更新
-                                        checkbox.checked = true;
-                                        checkbox.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                    if (checkbox) {{
+                                        console.log("  -> 成功找到 checkbox 元素，目前狀態:", checkbox.checked);
+                                        if (!checkbox.checked) {{
+                                            if (label) label.click();
+                                            else checkbox.click();
+                                            
+                                            // 原生點擊後也補上事件觸發確保綁定更新
+                                            checkbox.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                            console.log("  -> 已經執行打勾！並等待 500ms 讓畫面重新渲染...");
+                                            
+                                            // 等待 500 毫秒讓 Kendo/Vue 框架完成畫面的重新渲染
+                                            await new Promise(r => setTimeout(r, 500));
+                                        }}
+                                    }} else {{
+                                        console.log("  -> 找不到 checkbox 元素！");
                                     }}
                                 }}
                             }}
+                        }} else {{
+                            console.log("找不到任何含有表格的可見彈出視窗！");
                         }}
+                        console.log("=== 自動打勾腳本執行完畢 ===");
                     }}
                     '''
                     page.evaluate(js_check_logic)
                     page.wait_for_timeout(1000)
                     
-                    # 9. 點擊彈出視窗內的「儲存」按鈕
-                    print("點擊彈出視窗內的「儲存」按鈕...")
-                    page.locator(".k-window:visible button:has-text('儲存'), .k-window:visible a:has-text('儲存')").first.click()
+                    # 9. 點擊彈出視窗左上角（或上方）的「儲存」按鈕 (用 evaluate 避免畫面滾動)
+                    page.evaluate('''() => {
+                        var windows = Array.from(document.querySelectorAll('.k-window'));
+                        var visibleWindow = windows.find(w => w.offsetWidth > 0 && w.style.display !== 'none' && w.querySelector('tbody tr'));
+                        if (visibleWindow) {
+                            var saveBtn = visibleWindow.querySelector("a.k-grid-save-changes") || 
+                                          Array.from(visibleWindow.querySelectorAll('button, a')).find(b => b.innerText.includes('儲存'));
+                            if (saveBtn) {
+                                saveBtn.click();
+                                console.log("【瀏覽器 Console】 已點擊彈出視窗內的儲存按鈕");
+                            } else {
+                                console.log("【瀏覽器 Console】 找不到彈出視窗內的儲存按鈕");
+                            }
+                        }
+                    }''')
                     page.wait_for_timeout(2000)
                     
-                    # 10. 點擊展開列內的「儲存」按鈕以完成加入項目
-                    print("點擊展開列內的「儲存」按鈕...")
-                    page.locator(".k-detail-row:visible a.k-grid-save-changes, .k-detail-row:visible a:has-text('儲存')").first.click()
+                    # 10. 點擊展開列內的「儲存」按鈕以完成加入項目 (用 evaluate 避免畫面滾動)
+                    page.evaluate('''() => {
+                        var rows = Array.from(document.querySelectorAll('.k-detail-row'));
+                        var visibleRow = rows.find(r => r.offsetWidth > 0 && r.style.display !== 'none');
+                        if (visibleRow) {
+                            var saveBtn = visibleRow.querySelector("a.k-grid-save-changes") || 
+                                          Array.from(visibleRow.querySelectorAll('a')).find(a => a.innerText.includes('儲存'));
+                            if (saveBtn) {
+                                saveBtn.click();
+                                console.log("【瀏覽器 Console】 已點擊展開列內的儲存按鈕");
+                            } else {
+                                console.log("【瀏覽器 Console】 找不到展開列內的儲存按鈕");
+                            }
+                        }
+                    }''')
                     page.wait_for_timeout(2000)
                     page.wait_for_load_state("networkidle")
                     
