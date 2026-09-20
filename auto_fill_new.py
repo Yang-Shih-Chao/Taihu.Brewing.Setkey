@@ -8,7 +8,7 @@ import datetime
 import os
 
 def start_automation(file_path, mode="全部新增"):
-    if mode not in ["新增子桶", "新增套餐", "新增母桶", "全部新增"]:
+    if mode not in ["新增子桶", "新增套餐", "全部新增"]:
         messagebox.showinfo("功能開發中", f"目前「{mode}」的功能尚未實作，現階段所有功能均屬於「新增子桶」。")
         return
 
@@ -371,7 +371,7 @@ def start_automation(file_path, mode="全部新增"):
                 "台南店": 2,
             }
 
-            def setup_shop(shop_name):
+            def setup_shop(shop_name, printer_name):
                 try:
                     idx = SHOP_INDEX_MAP.get(shop_name)
                     if idx is None:
@@ -385,9 +385,36 @@ def start_automation(file_path, mode="全部新增"):
                         if (cb && !cb.checked) cb.click();
                     }}''')
                 
-                    print(f"    ✅ setup_shop({shop_name}): 僅打勾 checkbox={cb_id}，無須設定印表機")
+                    # 2. 使用 Kendo jQuery API 直接設定 MultiSelect 的值
+                    #    這是最可靠的方式，完全不需要點擊 UI 元素
+                    page.evaluate(f'''(printerName) => {{
+                        var ms = $("#PrinterIdList{idx}").data("kendoMultiSelect");
+                        if (!ms) return;
+                    
+                        // 在資料來源中找到對應的印表機
+                        var dataSource = ms.dataSource.data();
+                        var targetValue = null;
+                        for (var i = 0; i < dataSource.length; i++) {{
+                            if (dataSource[i].PrinterName === printerName) {{
+                                targetValue = dataSource[i].ShopPrinterMasterId;
+                                break;
+                            }}
+                        }}
+                    
+                        if (targetValue !== null) {{
+                            // 取得目前已選的值，加入新值
+                            var currentValues = ms.value() || [];
+                            if (currentValues.indexOf(targetValue) === -1 && currentValues.indexOf(String(targetValue)) === -1) {{
+                                currentValues.push(targetValue);
+                            }}
+                            ms.value(currentValues);
+                            ms.trigger("change");
+                        }}
+                    }}''', printer_name)
+                
+                    print(f"    ✅ setup_shop({shop_name}): checkbox={cb_id}, printer=PrinterIdList{idx}, value={printer_name}")
                 except Exception as e:
-                    print(f"⚠️ 設定 {shop_name} 時發生錯誤: {e}")
+                    print(f"⚠️ 設定 {shop_name} 及其印表機時發生錯誤: {e}")
 
             # ---------------------------------------------------------
             # 3. 迴圈讀取所有資料並開始填寫
@@ -397,8 +424,7 @@ def start_automation(file_path, mode="全部新增"):
                 item_name = str(row["商品名稱"])
                 price = str(row["單價"])
             
-                # 如果字尾是 SD、SR、SF，則跳過不處理
-                if item_code.strip().endswith('SD') or item_code.strip().endswith('SR') or item_code.strip().endswith('SF'):
+                if not (item_code.strip().endswith('SD') or item_code.strip().endswith('SR') or item_code.strip().endswith('SF')):
                     msg = f"␐跳過␑商品編號不符合規則: {item_name} ({item_code})"
                     print(msg)
                     report_lines.append(msg)
@@ -421,10 +447,10 @@ def start_automation(file_path, mode="全部新增"):
                     
                         # 項目編碼與項目名稱
                         page.locator("#SelectedItemMaster_ItemCode").fill(item_code)
-                        page.locator("#SelectedItemMaster_ItemName").fill(f"(桶){item_name}")
+                        page.locator("#SelectedItemMaster_ItemName").fill(item_name)
                     
                         # 下拉選單 (呼叫上方寫好的 Kendo UI 專用函式)
-                        select_kendo("項目種類", "自由套餐")
+                        select_kendo("項目種類", "一般銷售項目")
                         val_category, val_dept, val_subdept = "", "", ""
                         for col in df.columns:
                             if "分類" in col: val_category = str(row[col]).strip()
@@ -441,15 +467,23 @@ def start_automation(file_path, mode="全部新增"):
                         select_kendo("子部門", val_subdept)
                         select_kendo("按鈕樣式", "淺灰色 (細)")
                         # ---------------------------------------------------------
-                        # 根據需求：不用打勾「可獨立銷售及套餐項目」
+                        # 【重要紀錄】: 勾選「可獨立銷售及套餐項目」
                         # ---------------------------------------------------------
+                        # 根據原始碼 `<label ... for="SelectedItemMaster_IsStandaloneAndSetItem">`，
+                        # 得知這個 checkbox 的實際 id 為 SelectedItemMaster_IsStandaloneAndSetItem
+                        # 使用 JavaScript 直接點擊，避開 viewport 錯誤，並確保只有在未勾選時才點擊
+                        page.locator("#SelectedItemMaster_IsStandaloneAndSetItem").evaluate("node => { if (!node.checked) node.click(); }")
                     
                         # ---------------------------------------------------------
-                        # 設定分店：大安店、Giddy、台南店 皆固定打勾，不設定印表機
+                        # 【重要紀錄】: 設定分店與印表機
                         # ---------------------------------------------------------
-                        setup_shop("大安店")
-                        setup_shop("Giddy")
-                        setup_shop("台南店")
+                        setup_shop("Giddy", "Giddy_Bar01")
+                        code_str = str(item_code).strip()
+                        name_str = str(item_name).strip()
+                        if code_str.upper().startswith('S') and name_str.endswith('|S'):
+                            setup_shop("台南店", "Bar外帶")
+                        else:
+                            setup_shop("台南店", "Bar內用")
                         # ---------------------------------------------------------
                         # 價格填寫 (Kendo NumericTextBox 特殊處理)
                         # ---------------------------------------------------------
@@ -482,11 +516,7 @@ def start_automation(file_path, mode="全部新增"):
                                     if (id === "Price" || id === "SelectedItemMaster_Price" || id.endsWith("_Price") || id.endsWith("__Price")) isPrice = true;
                                 
                                     if (isPrice) {{
-                                        var valToSet = p;
-                                        if (id.includes("ItemShopDetailList") || id.endsWith("__Price")) {{
-                                            valToSet = 0;
-                                        }}
-                                        widget.value(valToSet);
+                                        widget.value(p);
                                         widget.trigger("change");
                                     }}
                                 }}
@@ -653,10 +683,10 @@ def start_automation(file_path, mode="全部新增"):
                     
                     # 項目編碼與項目名稱
                     page.locator("#SelectedItemMaster_ItemCode").fill(item_code)
-                    page.locator("#SelectedItemMaster_ItemName").fill(f"(桶){item_name}")
+                    page.locator("#SelectedItemMaster_ItemName").fill(item_name)
                     
                     # 下拉選單 (呼叫上方寫好的 Kendo UI 專用函式)
-                    select_kendo("項目種類", "自由套餐")
+                    select_kendo("項目種類", "一般銷售項目")
                     val_category, val_dept, val_subdept = "", "", ""
                     for col in df.columns:
                         if "分類" in col: val_category = str(row[col]).strip()
